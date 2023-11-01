@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace PolyMod
 {
-	[BepInPlugin("com.polymod", "PolyMod", "0")]
+	[BepInPlugin("com.polymod", "PolyMod", "1.0.0.0")]
 	public class Plugin : BasePlugin
 	{
 		internal static bool foghack = false;
