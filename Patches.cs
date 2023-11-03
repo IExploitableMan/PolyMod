@@ -42,6 +42,16 @@ namespace PolyMod
 				tile.climate = (tileJson["climate"] == null || (int)tileJson["climate"] < 0 || (int)tileJson["climate"] > 16) ? 0 : (int)tileJson["climate"];
 				tile.terrain = tileJson["terrain"] == null ? TerrainData.Type.None : EnumCache<TerrainData.Type>.GetType((string)tileJson["terrain"]);
 				tile.improvement = tileJson["improvement"] == null ? null : new() { type = EnumCache<ImprovementData.Type>.GetType((string)tileJson["improvement"]) };
+				if (tile.improvement != null && tile.improvement.type == ImprovementData.Type.City) {
+					tile.improvement = new ImprovementState
+					{
+						type = ImprovementData.Type.City,
+						founded = 0,
+						level = 1,
+						borderSize = 1,
+						production = 1
+					};
+				}
 				tile.resource = tileJson["resource"] == null ? null : new() { type = EnumCache<ResourceData.Type>.GetType((string)tileJson["resource"]) };
 
 				__result.tiles[i] = tile;
