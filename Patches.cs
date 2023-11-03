@@ -25,12 +25,21 @@ namespace PolyMod
 			__instance.gameObject.AddComponent<Behaviour>();
 		}
 
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(LocalClient), nameof(LocalClient.CreateSession))]
+		static void LocalClient_CreateSession(ref GameSettings settings)
+		{
+			JObject json = JObject.Parse(File.ReadAllText(BepInEx.Paths.BepInExRootPath + "/map.json"));
+			if (json["size"] != null)
+			{
+				settings.MapSize = (ushort)json["size"];
+			}
+		}
+		
 		[HarmonyPostfix]
 		[HarmonyPatch(typeof(MapGenerator), nameof(MapGenerator.GenerateInternal))]
 		private static void MapGenerator_GenerateInternal(ref MapData __result)
 		{
-			//TODO: any size
-
 			JObject json = JObject.Parse(File.ReadAllText(BepInEx.Paths.BepInExRootPath + "/map.json"));
 			for (int i = 0; i < __result.tiles.Length; i++)
 			{
