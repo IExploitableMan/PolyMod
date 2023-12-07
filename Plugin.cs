@@ -1,5 +1,6 @@
 ﻿using BepInEx;
 using HarmonyLib;
+using PolytopiaBackendBase.Game;
 using Il2CppInterop.Runtime.InteropTypes;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using UnityEngine;
@@ -17,48 +18,18 @@ namespace PolyMod
 
 		internal static bool view_current = false;
 
-		internal enum PatchedGameMode
-		{
-			None, // Use the original GameMode
-			Bot
-		}
+		internal static bool bots_only = true;
 
-		public class PatchedGamemodeButton : GamemodeButton
-		{
-			
-		}
-
-		internal static PatchedGameMode gameMode = PatchedGameMode.None;
+		internal static bool unview = false;
 
 		public override void Load()
 		{
 			Harmony.CreateAndPatchAll(typeof(Patches));
 
-			Commands.Add("view_current", string.Empty, (args) =>
+			Commands.Add("bots_only", string.Empty, (args) =>
 			{
-				view_current = !view_current;
-				DebugConsole.Write($"View current player is {view_current}");
-			});
-
-			Commands.Add("auto_play", string.Empty, (args) =>
-			{
-				GameManager.debugAutoPlayLocalPlayer = !GameManager.debugAutoPlayLocalPlayer;
-				DebugConsole.Write($"Auto play is {GameManager.debugAutoPlayLocalPlayer}");
-			});
-
-			Commands.Add("skip_recap", string.Empty, (args) =>
-			{
-				skip_recap = !skip_recap;
-				DebugConsole.Write($"Skip recap is {skip_recap}");
-			});
-
-			Commands.Add("unset_AutoPlay", string.Empty, (args) =>
-			{
-				foreach (var player in GameManager.GameState.PlayerStates)
-				{
-					player.AutoPlay = false;
-				}
-				DebugConsole.Write($"Auto play is unset");
+				bots_only = !bots_only;
+				DebugConsole.Write($"Bots only is {bots_only}");
 			});
 
 			Commands.Add("starhack", "[amount]", (args) =>
