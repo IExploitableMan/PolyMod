@@ -1,25 +1,60 @@
 ﻿using HarmonyLib;
+using PolytopiaBackendBase.Game;
 
 namespace PolyMod
 {
 	internal class Patches
 	{
+
+		[HarmonyPatch(typeof(Tile))]
+		[HarmonyPatch("get_IsHidden")]
+		class Tile_IsHidden
+		{
+			public static bool Postfix(Tile __instance, ref bool __result)
+			{
+				if (GameManager.Client != null && GameManager.Client.IsReplay && !SettingsUtils.ReplayEnableFog)
+				{
+					__result = false;
+					return __result;
+				}
+				if (GameManager.Client != null && GameManager.Client.IsReplay && SettingsUtils.ReplaySharedFog)
+				{
+					__result = __instance.Data.explorers == null || __instance.Data.explorers.Count == 0;
+					return __result;
+				}
+				if (Plugin.view_current)
+				{
+					__result = __instance.Data.GetExplored(GameManager.GameState.CurrentPlayer);
+					return __result;
+				}
+				__result = !__instance.Data.GetExplored(GameManager.LocalPlayer.Id);
+				return __result;
+			}
+		}
+
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(ClientActionManager), nameof(ClientActionManager.Update))]
+		static bool Update(ClientActionManager __instance)
+		{
+			if (Plugin.skip_recap)
+			{
+				__instance.LastSeenCommand = (ushort)__instance.gameState.CommandStack.Count;
+			}
+			return true;
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(ClientActionManager), nameof(ClientActionManager.StartRecap))]
+		private static void ClientActionManager_StartRecap_()
+		{
+			DebugConsole.Write("Recap started (shouldn't it be skipped?)");
+		}
+
 		[HarmonyPostfix]
 		[HarmonyPatch(typeof(GameManager), nameof(GameManager.Update))]
 		private static void GameManager_Update(GameManager __instance)
 		{
 			Plugin.Update();
-		}
-
-		[HarmonyPostfix]
-		[HarmonyPatch(typeof(TileData), nameof(TileData.GetExplored))]
-		private static void TileData_GetExplored(ref bool __result, ref byte playerId)
-		{
-			if (GameManager.LocalPlayer == null) return;
-			if (Plugin.foghack && playerId == GameManager.LocalPlayer.Id)
-			{
-				__result = true;
-			}
 		}
 
 		[HarmonyPrefix]

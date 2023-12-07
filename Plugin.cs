@@ -13,17 +13,54 @@ namespace PolyMod
 		internal const uint MAP_MAX_SIZE = 100;
 
 		internal static bool console = false;
-		internal static bool foghack = false;
+		internal static bool skip_recap = false;
+
+		internal static bool view_current = false;
+
+		internal enum PatchedGameMode
+		{
+			None, // Use the original GameMode
+			Bot
+		}
+
+		public class PatchedGamemodeButton : GamemodeButton
+		{
+			
+		}
+
+		internal static PatchedGameMode gameMode = PatchedGameMode.None;
 
 		public override void Load()
 		{
 			Harmony.CreateAndPatchAll(typeof(Patches));
 
-			Commands.Add("foghack", string.Empty, (args) =>
+			Commands.Add("view_current", string.Empty, (args) =>
 			{
-				foghack = !foghack;
-				DebugConsole.Write($"Foghack is {foghack}");
+				view_current = !view_current;
+				DebugConsole.Write($"View current player is {view_current}");
 			});
+
+			Commands.Add("auto_play", string.Empty, (args) =>
+			{
+				GameManager.debugAutoPlayLocalPlayer = !GameManager.debugAutoPlayLocalPlayer;
+				DebugConsole.Write($"Auto play is {GameManager.debugAutoPlayLocalPlayer}");
+			});
+
+			Commands.Add("skip_recap", string.Empty, (args) =>
+			{
+				skip_recap = !skip_recap;
+				DebugConsole.Write($"Skip recap is {skip_recap}");
+			});
+
+			Commands.Add("unset_AutoPlay", string.Empty, (args) =>
+			{
+				foreach (var player in GameManager.GameState.PlayerStates)
+				{
+					player.AutoPlay = false;
+				}
+				DebugConsole.Write($"Auto play is unset");
+			});
+
 			Commands.Add("starhack", "[amount]", (args) =>
 			{
 				int amount = 0;

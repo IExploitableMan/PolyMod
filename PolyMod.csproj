@@ -4,6 +4,8 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <OutputPath>C:\Program Files (x86)\Steam\steamapps\common\The Battle of Polytopia\BepInEx\plugins</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 	<RestoreAdditionalProjectSources>
 		https://api.nuget.org/v3/index.json;
 		https://nuget.bepinex.dev/v3/index.json;
