@@ -19,8 +19,8 @@ namespace PolyMod
 		internal static bool view_current = false;
 
 		internal static bool bots_only = true;
-
 		internal static bool unview = false;
+		internal static LocalClient? localClient = null;
 
 		public override void Load()
 		{

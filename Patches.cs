@@ -91,160 +91,167 @@ namespace PolyMod
 			return true;
 		}
 
-		// [HarmonyPrefix]
-		// [HarmonyPatch(typeof(EnableTaskReaction), nameof(EnableTaskReaction.Execute))]
-		// public static bool EnableTaskReaction_PreExecute()
-		// {
-		// 	if (!Plugin.bots_only || GameManager.PreliminaryGameSettings.BaseGameMode != GameMode.Custom)
-		// 	{
-		// 		Plugin.unview = true;
-		// 	}
-		// 	return false;
-		// }
-
-		// [HarmonyPostfix]
-		// [HarmonyPatch(typeof(EnableTaskReaction), nameof(EnableTaskReaction.Execute))]
-		// public static void EnableTaskReaction_PostExecute()
-		// {
-		// 	Plugin.unview = false;
-		// }
-
-		// [HarmonyPrefix]
-		// [HarmonyPatch(typeof(TaskCompletedReaction), nameof(TaskCompletedReaction.Execute))]
-		// public static bool TaskCompletedReaction_PreExecute()
-		// {
-		// 	if (!Plugin.bots_only || GameManager.PreliminaryGameSettings.BaseGameMode != GameMode.Custom)
-		// 	{
-		// 		Plugin.unview = true;
-		// 	}
-		// 	return false;
-		// }
-
-		// [HarmonyPostfix]
-		// [HarmonyPatch(typeof(TaskCompletedReaction), nameof(TaskCompletedReaction.Execute))]
-		// public static void TaskCompletedReaction_PostExecute()
-		// {
-		// 	Plugin.unview = false;
-		// }
-
-		// [HarmonyPrefix]
-		// [HarmonyPatch(typeof(MeetReaction), nameof(MeetReaction.Execute))]
-		// public static bool MeetReaction_PreExecute()
-		// {
-		// 	if (!Plugin.bots_only || GameManager.PreliminaryGameSettings.BaseGameMode != GameMode.Custom)
-		// 	{
-		// 		Plugin.unview = true;
-		// 	}
-		// 	return false;
-		// }
-
-		// [HarmonyPostfix]
-		// [HarmonyPatch(typeof(MeetReaction), nameof(MeetReaction.Execute))]
-		// public static void MeetReaction_PostExecute()
-		// {
-		// 	Plugin.unview = false;
-		// }
-
 		[HarmonyPrefix]
-		[HarmonyPatch(typeof(LocalClient), nameof(LocalClient.CreateSession))]
-		public static bool CreateSession(ref Il2CppSystem.Threading.Tasks.Task<CreateSessionResult> __result, ref LocalClient __instance, GameSettings settings, List<PlayerState> players)
+		[HarmonyPatch(typeof(WipePlayerReaction), nameof(WipePlayerReaction.Execute))]
+		public static bool WipePlayerReaction_Execute()
 		{
 			if (!Plugin.bots_only || GameManager.PreliminaryGameSettings.BaseGameMode != GameMode.Custom)
 			{
 				return true;
 			}
-			__instance.ClearPreviousSession();
-			__instance.Reset();
-			__instance.gameId = Il2CppSystem.Guid.NewGuid();
-			GameState gameState = new GameState
+			DebugConsole.Write($"GameManager.Client.ActionManager.isRecapping: {GameManager.Client.ActionManager.isRecapping}");
+			GameManager.Client.ActionManager.isRecapping = true;
+			return true;
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(WipePlayerReaction), nameof(WipePlayerReaction.Execute))]
+		public static void WipePlayerReaction_Execute_Postfix()
+		{
+			if (!Plugin.bots_only || GameManager.PreliminaryGameSettings.BaseGameMode != GameMode.Custom)
 			{
-				Version = VersionManager.GameVersion,
-				Settings = settings,
-				PlayerStates = new Il2CppSystem.Collections.Generic.List<PlayerState>()
-			};
-			if (settings.isWeeklyChallenge)
+				return;
+			}
+			GameManager.Client.ActionManager.isRecapping = false;
+		}
+
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(StartTurnReaction), nameof(StartTurnReaction.Execute))]
+		public static bool StartTurnReaction_Execute()
+		{
+			if (!Plugin.bots_only || GameManager.PreliminaryGameSettings.BaseGameMode != GameMode.Custom)
 			{
-				gameState.Seed = WeeklyChallenges.GetWeeklyChallengeSeed();
-				for (int i = 0; i < settings.weeklyChallengeSettings.players.Count; i++)
+				return true;
+			}
+			Plugin.localClient = GameManager.Client as LocalClient;
+			if (Plugin.localClient == null)
+			{
+				DebugConsole.Write($"So GameManager.Client is {GameManager.Client.GetType()}? What?");
+				return true;
+			}
+			// Replace the client (temporarily)
+			GameManager.instance.client = new ReplayClient();
+			GameManager.Client.currentGameState = Plugin.localClient.GameState;
+			GameManager.Client.CreateOrResetActionManager(Plugin.localClient.lastSeenCommand);
+			GameManager.Client.ActionManager.isRecapping = true;
+			LevelManager.GetClientInteraction().DeselectUnit();
+			LevelManager.GetClientInteraction().DeselectTile(); // Just in case the human was clicking on stuff
+			return true;
+		}
+
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(MapRenderer), nameof(MapRenderer.Refresh))]
+		public static bool MapRenderer_Refresh()
+		{
+			if (!Plugin.bots_only || GameManager.PreliminaryGameSettings.BaseGameMode != GameMode.Custom)
+			{
+				return true;
+			}
+			if (Plugin.localClient != null)
+			{ // Repair the client as soon as possible
+				GameManager.instance.client = Plugin.localClient;
+				Plugin.localClient = null;
+			}
+			return true;
+		}
+
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(TaskCompletedReaction), nameof(TaskCompletedReaction.Execute))]
+		public static bool TaskCompletedReaction_Execute(ref TaskCompletedReaction __instance, ref byte __state)
+		{
+			if (!Plugin.bots_only || GameManager.PreliminaryGameSettings.BaseGameMode != GameMode.Custom)
+			{
+				return true;
+			}
+			__state = __instance.action.PlayerId;
+			__instance.action.PlayerId = 255;
+			return true;
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(TaskCompletedReaction), nameof(TaskCompletedReaction.Execute))]
+		public static void TaskCompletedReaction_Execute_Postfix(ref TaskCompletedReaction __instance, ref byte __state)
+		{
+			if (!Plugin.bots_only || GameManager.PreliminaryGameSettings.BaseGameMode != GameMode.Custom)
+			{
+				return;
+			}
+			__instance.action.PlayerId = __state;
+		}
+
+		// Patch multiple classes with the same method
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(MeetReaction), nameof(MeetReaction.Execute))]
+		[HarmonyPatch(typeof(EnableTaskReaction), nameof(EnableTaskReaction.Execute))]
+		[HarmonyPatch(typeof(ExamineRuinsReaction), nameof(ExamineRuinsReaction.Execute))]
+		[HarmonyPatch(typeof(InfiltrationRewardReaction), nameof(InfiltrationRewardReaction.Execute))]
+		public static bool Patch_Execute()
+		{
+			if (!Plugin.bots_only || GameManager.PreliminaryGameSettings.BaseGameMode != GameMode.Custom)
+			{
+				return true;
+			}
+			Plugin.unview = true;
+			return true;
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(MeetReaction), nameof(MeetReaction.Execute))]
+		[HarmonyPatch(typeof(EnableTaskReaction), nameof(EnableTaskReaction.Execute))]
+		[HarmonyPatch(typeof(ExamineRuinsReaction), nameof(ExamineRuinsReaction.Execute))]
+		[HarmonyPatch(typeof(InfiltrationRewardReaction), nameof(InfiltrationRewardReaction.Execute))]
+		[HarmonyPatch(typeof(StartTurnReaction), nameof(StartTurnReaction.Execute))]
+		public static void Patch_Execute_Post()
+		{
+			if (!Plugin.bots_only || GameManager.PreliminaryGameSettings.BaseGameMode != GameMode.Custom)
+			{
+				if (Plugin.unview)
 				{
-					PlayerData playerData = settings.weeklyChallengeSettings.players[i];
-					bool flag = playerData.type == PlayerData.Type.Bot;
-					gameState.PlayerStates.Add(new PlayerState
-					{
-						Id = (byte)(i + 1),
-						AccountId = new Il2CppSystem.Nullable<Il2CppSystem.Guid>(Il2CppSystem.Guid.Empty),
-						AutoPlay = flag,
-						UserName = playerData.GetNameInternal(),
-						tribe = playerData.tribe,
-						tribeMix = playerData.tribeMix,
-						skinType = playerData.skinType,
-						hasChosenTribe = true
-					});
+					DebugConsole.Write("Uh, what!?");
 				}
+				return;
 			}
-			else
+			Plugin.unview = false;
+		}
+
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(ClientActionManager), nameof(ClientActionManager.Update))]
+		public static void Patch_Update()
+		{
+			if (!Plugin.bots_only || GameManager.PreliminaryGameSettings.BaseGameMode != GameMode.Custom)
 			{
-				for (int j = 0; j < settings.OpponentCount + 1; j++)
+				if (Plugin.unview)
 				{
-                    PlayerState playerState = new PlayerState
-                    {
-                        Id = (byte)(j + 1),
-                        AccountId = new Il2CppSystem.Nullable<Il2CppSystem.Guid>(Il2CppSystem.Guid.Empty),
-                        AutoPlay = false,
-                        UserName = AccountManager.AliasInternal,
-                        tribe = GameStateUtils.GetRandomPickableTribe(gameState),
-                        tribeMix = TribeData.Type.None,
-                        skinType = SkinType.Default,
-                        hasChosenTribe = true,
-                        handicap = GameSettings.HandicapFromDifficulty(settings.Difficulty)
-                    };
-                    gameState.PlayerStates.Add(playerState);
+					DebugConsole.Write("Uh, what!?");
 				}
-			}
-			GameStateUtils.SetPlayerColors(gameState);
-			GameStateUtils.AddNaturePlayer(gameState);
-			ushort num = (ushort)Math.Max(settings.MapSize, (int)MapDataExtensions.GetMinimumMapSize(gameState.PlayerCount));
-			gameState.Map = new MapData(num, num);
-			MapGeneratorSettings mapGeneratorSettings = settings.GetMapGeneratorSettings();
-			MapGenerator mapGenerator = new MapGenerator();
-			if (settings.isWeeklyChallenge)
-			{
-				mapGenerator.GenerateWithSeed(settings.weeklyChallengeSettings.seed, gameState, mapGeneratorSettings, null);
-			}
-			else
-			{
-				mapGenerator.Generate(gameState, mapGeneratorSettings, null);
-			}
-			foreach (PlayerState playerState2 in gameState.PlayerStates)
-			{
-				foreach (PlayerState playerState3 in gameState.PlayerStates)
+				if (Plugin.localClient != null)
 				{
-					playerState2.aggressions[playerState3.Id] = 0;
+					DebugConsole.Write("Sorry, what!?");
 				}
-				if (playerState2.Id != 255)
-				{
-					playerState2.Currency = 5;
-                    if (gameState.GameLogicData.TryGetData(playerState2.tribe, out TribeData tribeData) && gameState.GameLogicData.TryGetData(tribeData.startingUnit.type, out UnitData unitData))
-                    {
-                        TileData tile = gameState.Map.GetTile(playerState2.startTile);
-                        UnitState unitState = ActionUtils.TrainUnitScored(gameState, playerState2, tile, unitData);
-                        unitState.attacked = false;
-                        unitState.moved = false;
-                    }
-                }
+				return;
 			}
-			SerializationHelpers.FromByteArray<GameState>(SerializationHelpers.ToByteArray<GameState>(gameState, gameState.Version), out gameState);
-			__instance.initialGameState = gameState;
-			gameState.CommandStack.Add(new StartMatchCommand(1));
-			__instance.hasInitializedSaveData = true;
-			__instance.UpdateGameStateImmediate(gameState, StateUpdateReason.GameCreated);
-			__instance.SaveSession(__instance.gameId, false);
-			__instance.PrepareSession();
-			Il2CppSystem.Guid gameId = __instance.gameId;
-			PlayerState currentLocalPlayer = __instance.GetCurrentLocalPlayer();
-			AnalyticsHelpers.SendGameStartEvent(gameId, settings, (currentLocalPlayer != null) ? new Il2CppSystem.Nullable<TribeData.Type>(currentLocalPlayer.tribe) : null);
-			__result = Il2CppSystem.Threading.Tasks.Task.FromResult<CreateSessionResult>(CreateSessionResult.Success);
-			return false;
+			if (Plugin.localClient != null)
+			{
+				GameManager.instance.client = Plugin.localClient;
+				Plugin.localClient = null;
+			}
+			Plugin.unview = false;
+		}
+
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(LocalClient), nameof(LocalClient.CreateSession))]
+		public static void LocalClient_CreateSession(ref Il2CppSystem.Threading.Tasks.Task<CreateSessionResult> __result, ref LocalClient __instance, GameSettings settings, List<PlayerState> players)
+		{
+			if (!Plugin.bots_only || GameManager.PreliminaryGameSettings.BaseGameMode != GameMode.Custom)
+			{
+				return;
+			}
+			for (int j = 0; j < __instance.GameState.PlayerCount; j++)
+			{
+				PlayerState playerState = __instance.GameState.PlayerStates[j];
+				playerState.AutoPlay = false;
+				playerState.UserName = AccountManager.AliasInternal;
+			}
 		}
 
 		[HarmonyPrefix]
