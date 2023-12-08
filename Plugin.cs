@@ -1,6 +1,5 @@
 ﻿using BepInEx;
 using HarmonyLib;
-using PolytopiaBackendBase.Game;
 using Il2CppInterop.Runtime;
 using Il2CppInterop.Runtime.InteropTypes.Arrays;
 using UnityEngine;
@@ -15,11 +14,8 @@ namespace PolyMod
 
 		internal static bool start = false;
 		internal static bool console = false;
-		internal static bool skip_recap = false;
 
-		internal static bool view_current = false;
-
-		internal static bool bots_only = true;
+		internal static bool bots_only = false;
 		internal static bool unview = false;
 		internal static LocalClient? localClient = null;
 
@@ -30,6 +26,14 @@ namespace PolyMod
 
 		internal static void Start()
 		{
+
+			AddCommand("bots", "", (args) =>
+			{
+				bots_only = !bots_only;
+
+				DebugConsole.Write($"Bots only: {bots_only}");
+			});
+
 			AddCommand("starhack", "[amount]", (args) =>
 			{
 				int amount = 100;

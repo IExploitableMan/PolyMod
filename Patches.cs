@@ -135,6 +135,7 @@ namespace PolyMod
 			GameManager.Client.CreateOrResetActionManager(Plugin.localClient.lastSeenCommand);
 			GameManager.Client.ActionManager.isRecapping = true;
 			LevelManager.GetClientInteraction().DeselectUnit();
+			LevelManager.GetClientInteraction().TryDeselectUnit(LevelManager.GetClientInteraction().selectedUnit);
 			LevelManager.GetClientInteraction().DeselectTile(); // Just in case the human was clicking on stuff
 			return true;
 		}
@@ -258,7 +259,12 @@ namespace PolyMod
 		[HarmonyPatch(typeof(LocalClient), nameof(LocalClient.GetCurrentLocalPlayer))]
 		public static bool LocalClient_GetCurrentLocalPlayer(ref PlayerState __result, ref LocalClient __instance)
 		{
-			MapEditor.PreGenerate(ref state, ref settings);
+			if (!Plugin.bots_only || GameManager.PreliminaryGameSettings.BaseGameMode != GameMode.Custom)
+			{
+				return true;
+			}
+			__result = __instance.GameState.PlayerStates[__instance.GameState.CurrentPlayerIndex];
+			return false;
 		}
 
 		[HarmonyPrefix]
