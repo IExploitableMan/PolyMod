@@ -8,7 +8,7 @@ namespace PolyMod
 		internal static string mapPath = string.Empty;
 		private static JObject? _mapJson;
 
-		private static JObject GetMapJson()
+		private static JObject? GetMapJson()
 		{
 			if (mapPath == string.Empty)
 			{
@@ -19,7 +19,7 @@ namespace PolyMod
 
 		internal static void PreGenerate(ref GameState state, ref MapGeneratorSettings settings)
 		{
-			JObject json = GetMapJson();
+			JObject? json = GetMapJson();
 			if (json == null)
 			{
 				return;
@@ -36,7 +36,7 @@ namespace PolyMod
 
 		internal static void PostGenerate(ref GameState state)
 		{
-			JObject json = GetMapJson();
+			JObject? json = GetMapJson();
 			if (json == null)
 			{
 				return;
@@ -72,6 +72,24 @@ namespace PolyMod
 				tile.climate = (tileJson["climate"] == null || (int)tileJson["climate"] < 0 || (int)tileJson["climate"] > 16) ? 0 : (int)tileJson["climate"];
 				tile.skinType = tileJson["skinType"] == null ? SkinType.Default : EnumCache<SkinType>.GetType((string)tileJson["skinType"]);
 				tile.terrain = tileJson["terrain"] == null ? TerrainData.Type.None : EnumCache<TerrainData.Type>.GetType((string)tileJson["terrain"]);
+
+				switch (tile.terrain)
+				{
+					case TerrainData.Type.Water:
+						tile.altitude = -1;
+						break;
+					case TerrainData.Type.Ocean:
+					case TerrainData.Type.Ice:
+						tile.altitude = -2;
+						break;
+					case TerrainData.Type.Field:
+					case TerrainData.Type.Forest:
+						tile.altitude = 1;
+						break;
+					case TerrainData.Type.Mountain:
+						tile.altitude = 2;
+						break;
+				}
 
 				map.tiles[i] = tile;
 			}

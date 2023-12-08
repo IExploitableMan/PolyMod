@@ -258,38 +258,22 @@ namespace PolyMod
 		[HarmonyPatch(typeof(LocalClient), nameof(LocalClient.GetCurrentLocalPlayer))]
 		public static bool LocalClient_GetCurrentLocalPlayer(ref PlayerState __result, ref LocalClient __instance)
 		{
-			if (!Plugin.bots_only || GameManager.PreliminaryGameSettings.BaseGameMode != GameMode.Custom)
-			{
-				return true;
-			}
-			PlayerState playerState;
-			if (__instance.GameState != null && __instance.GameState.TryGetPlayer((byte)(__instance.GameState.CurrentPlayerIndex + 1), out playerState))
-			{
-				__result = playerState;
-				return false;
-			}
-			return true;
+			MapEditor.PreGenerate(ref state, ref settings);
 		}
+
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(MapGenerator), nameof(MapGenerator.Generate))]
+		static void MapGenerator_Generate(ref GameState state, ref MapGeneratorSettings settings)
+		{
+			MapEditor.PreGenerate(ref state, ref settings);
+		}
+
 
 		[HarmonyPostfix]
 		[HarmonyPatch(typeof(GameManager), nameof(GameManager.Update))]
 		private static void GameManager_Update(GameManager __instance)
 		{
 			Plugin.Update();
-		}
-
-		[HarmonyPrefix]
-		[HarmonyPatch(typeof(DebugConsole), nameof(DebugConsole.ExecuteCommand))]
-		private static bool DebugConsole_ExecuteCommand(ref string command)
-		{
-			return !Commands.Execute(command);
-		}
-
-		[HarmonyPostfix]
-		[HarmonyPatch(typeof(DebugConsole), nameof(DebugConsole.CmdHelp))]
-		private static void DebugConsole_CmdHelp()
-		{
-			Commands.Help();
 		}
 
 		[HarmonyPrefix]
