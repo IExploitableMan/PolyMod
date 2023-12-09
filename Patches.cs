@@ -282,6 +282,17 @@ namespace PolyMod
 			Plugin.Update();
 		}
 
+		[HarmonyPostfix]
+		[HarmonyPatch(typeof(CameraController), nameof(CameraController.Awake))]
+		private static void CameraController_Awake()
+		{
+			CameraController.Instance.maxZoom = Plugin.CAMERA_CONSTANT;
+			CameraController.Instance.techViewBounds = new(
+				new(Plugin.CAMERA_CONSTANT, Plugin.CAMERA_CONSTANT), CameraController.Instance.techViewBounds.size
+			);
+			UnityEngine.GameObject.Find("TechViewWorldSpace").transform.position = new(Plugin.CAMERA_CONSTANT, Plugin.CAMERA_CONSTANT);
+		}
+
 		[HarmonyPrefix]
 		[HarmonyPatch(typeof(SettingsScreen), nameof(SettingsScreen.CreateLanguageList))]
 		private static bool SettingsScreen_CreateLanguageList(SettingsScreen __instance, UnityEngine.Transform parent)

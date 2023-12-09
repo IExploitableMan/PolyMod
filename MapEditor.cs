@@ -5,27 +5,16 @@ namespace PolyMod
 {
 	internal static class MapEditor
 	{
-		internal static string mapPath = string.Empty;
-		private static JObject? _mapJson;
-
-		private static JObject? GetMapJson()
-		{
-			if (mapPath == string.Empty)
-			{
-				return null;
-			}
-			return _mapJson ?? JObject.Parse(File.ReadAllText(mapPath));
-		}
+		internal static JObject? customMap;
 
 		internal static void PreGenerate(ref GameState state, ref MapGeneratorSettings settings)
 		{
-			JObject? json = GetMapJson();
-			if (json == null)
+			if (customMap == null)
 			{
 				return;
 			}
 
-			ushort size = (ushort)json["size"];
+			ushort size = (ushort)customMap["size"];
 			if (size < Plugin.MAP_MIN_SIZE || size > Plugin.MAP_MAX_SIZE)
 			{
 				throw new Exception($"The map size must be between {Plugin.MAP_MIN_SIZE} and {Plugin.MAP_MAX_SIZE}");
@@ -36,8 +25,7 @@ namespace PolyMod
 
 		internal static void PostGenerate(ref GameState state)
 		{
-			JObject? json = GetMapJson();
-			if (json == null)
+			if (customMap == null)
 			{
 				return;
 			}
@@ -46,7 +34,7 @@ namespace PolyMod
 			for (int i = 0; i < map.tiles.Length; i++)
 			{
 				TileData tile = map.tiles[i];
-				JToken tileJson = json["map"][i];
+				JToken tileJson = customMap["map"][i];
 
 				if (tileJson["skip"] != null && (bool)tileJson["skip"]) continue;
 				if (tile.rulingCityCoordinates == WorldCoordinates.NULL_COORDINATES)
@@ -94,8 +82,7 @@ namespace PolyMod
 				map.tiles[i] = tile;
 			}
 
-			mapPath = string.Empty;
-			_mapJson = null;
+			customMap = null;
 		}
 	}
 }
