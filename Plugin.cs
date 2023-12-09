@@ -33,37 +33,6 @@ namespace PolyMod
 
 				DebugConsole.Write($"Bots only: {bots_only}");
 			});
-
-			AddCommand("starhack", "[amount]", (args) =>
-			{
-				int amount = 100;
-				if (args.Length > 0)
-				{
-					int.TryParse(args[0], out amount);
-				}
-
-				GameManager.LocalPlayer.Currency += amount;
-
-				DebugConsole.Write($"+{amount} stars");
-			});
-			AddCommand("setmap", "(path)", (args) =>
-			{
-				if (args.Length == 0)
-				{
-					DebugConsole.Write("Wrong args!");
-					return;
-				}
-
-				MapEditor.mapPath = args[0];
-
-				DebugConsole.Write($"Map set");
-			});
-			AddCommand("unsetmap", "", (args) =>
-			{
-				MapEditor.mapPath = string.Empty;
-
-				DebugConsole.Write($"Map unset");
-			});
 		}
 
 		internal static void Update()
