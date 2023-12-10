@@ -19,7 +19,7 @@ namespace PolyMod
             GameSettingsExtensions.TryLoadFromDisk(out GameSettings gameSettings, GameType.SinglePlayer, gameMode);
             GameManager.PreliminaryGameSettings = gameSettings;
 			GameManager.PreliminaryGameSettings.BaseGameMode = gameMode;
-			GameManager.debugAutoPlayLocalPlayer = true;
+			// GameManager.debugAutoPlayLocalPlayer = true;
 			UIManager.Instance.ShowScreen(UIConstants.Screens.GameSetup, false);
 			return false;
 		}
@@ -45,7 +45,7 @@ namespace PolyMod
 
 		[HarmonyPrefix]
 		[HarmonyPatch(typeof(GameSetupScreen), nameof(GameSetupScreen.CreateOpponentList))]
-		private static bool GameSetupScreen_CreateOpponentList(ref UIHorizontalList __result, GameSetupScreen __instance, RectTransform parent = null)
+		private static bool GameSetupScreen_CreateOpponentList(ref UIHorizontalList __result, GameSetupScreen __instance, RectTransform? parent = null)
 		{
 			if (!Plugin.bots_only || GameManager.PreliminaryGameSettings.BaseGameMode != GameMode.Custom)
 			{
@@ -99,7 +99,6 @@ namespace PolyMod
 			{
 				return true;
 			}
-			DebugConsole.Write($"GameManager.Client.ActionManager.isRecapping: {GameManager.Client.ActionManager.isRecapping}");
 			GameManager.Client.ActionManager.isRecapping = true;
 			return true;
 		}
@@ -126,7 +125,6 @@ namespace PolyMod
 			Plugin.localClient = GameManager.Client as LocalClient;
 			if (Plugin.localClient == null)
 			{
-				DebugConsole.Write($"So GameManager.Client is {GameManager.Client.GetType()}? What?");
 				return true;
 			}
 			// Replace the client (temporarily)
@@ -188,7 +186,8 @@ namespace PolyMod
 		[HarmonyPatch(typeof(InfiltrationRewardReaction), nameof(InfiltrationRewardReaction.Execute))]
 		[HarmonyPatch(typeof(EstablishEmbassyReaction), nameof(EstablishEmbassyReaction.Execute))]
 		[HarmonyPatch(typeof(DestroyEmbassyReaction), nameof(DestroyEmbassyReaction.Execute))]
-		public static bool Patch_Execute()
+		[HarmonyPatch(typeof(ReceiveDiplomacyMessageReaction), nameof(ReceiveDiplomacyMessageReaction.Execute))]
+		public static bool Patch_Execute(ReactionBase __instance)
 		{
 			if (!Plugin.bots_only || GameManager.PreliminaryGameSettings.BaseGameMode != GameMode.Custom)
 			{
@@ -205,6 +204,7 @@ namespace PolyMod
 		[HarmonyPatch(typeof(InfiltrationRewardReaction), nameof(InfiltrationRewardReaction.Execute))]
 		[HarmonyPatch(typeof(EstablishEmbassyReaction), nameof(EstablishEmbassyReaction.Execute))]
 		[HarmonyPatch(typeof(DestroyEmbassyReaction), nameof(DestroyEmbassyReaction.Execute))]
+		[HarmonyPatch(typeof(ReceiveDiplomacyMessageReaction), nameof(ReceiveDiplomacyMessageReaction.Execute))]
 		[HarmonyPatch(typeof(StartTurnReaction), nameof(StartTurnReaction.Execute))]
 		public static void Patch_Execute_Post()
 		{
