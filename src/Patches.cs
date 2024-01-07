@@ -6,6 +6,20 @@ namespace PolyMod
 {
 	internal class Patches
 	{
+
+		[HarmonyPrefix]
+		[HarmonyPatch(typeof(GameStateUtils), nameof(GameStateUtils.GetRandomPickableTribe), new System.Type[] { typeof(GameState) })]
+		public static bool GameStateUtils_GetRandomPickableTribe(GameState gameState)
+		{
+			if (Plugin.change_next_version)
+			{
+				gameState.Version = Plugin.next_version;
+				Plugin.change_next_version = false;
+				DebugConsole.Write($"Changed version to {Plugin.next_version}");
+			}
+			return true;	
+		}
+
 		[HarmonyPostfix]
 		[HarmonyPatch(typeof(GameManager), nameof(GameManager.Update))]
 		private static void GameManager_Update(GameManager __instance)
