@@ -14,7 +14,7 @@ namespace PolyMod
 		internal const int CAMERA_CONSTANT = 1000;
 		internal static readonly string MODS_PATH = Path.Combine(BepInEx.Paths.BepInExRootPath, "..", "Mods/");
 
-		internal static int next_version = -1;
+		internal static int version = -1;
 
 		internal static bool start = false;
 

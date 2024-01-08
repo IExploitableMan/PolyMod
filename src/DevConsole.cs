@@ -40,11 +40,11 @@ namespace PolyMod
 
 				DebugConsole.Write($"Map unset");
 			});
-			AddCommand("ver_change", "Changes the version of the next singleplayer game", (args) =>
+			AddCommand("version_change", "Changes the version of the next singleplayer game", (args) =>
 			{
-				Plugin.next_version = int.Parse(args[0].ToString());
+				Plugin.version = int.Parse(args[0].ToString());
 
-				DebugConsole.Write($"Next game will start with version {Plugin.next_version}");
+				DebugConsole.Write($"Next game will start with version {Plugin.version}");
 			});
 		}
 

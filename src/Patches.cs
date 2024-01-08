@@ -11,11 +11,11 @@ namespace PolyMod
 		[HarmonyPatch(typeof(GameStateUtils), nameof(GameStateUtils.GetRandomPickableTribe), new System.Type[] { typeof(GameState) })]
 		public static bool GameStateUtils_GetRandomPickableTribe(GameState gameState)
 		{
-			if (Plugin.next_version > 0)
+			if (Plugin.version > 0)
 			{
-				gameState.Version = Plugin.next_version;
-				DebugConsole.Write($"Changed version to {Plugin.next_version}");
-				Plugin.next_version = -1;
+				gameState.Version = Plugin.version;
+				DebugConsole.Write($"Changed version to {Plugin.version}");
+				Plugin.version = -1;
 			}
 			return true;	
 		}
